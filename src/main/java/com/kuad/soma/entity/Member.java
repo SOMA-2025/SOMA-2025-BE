@@ -22,6 +22,7 @@ public class Member extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String portfolioName;
 
-    @Column(nullable = false)
-    private String teamName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id", nullable = false)
+    private Team team;
 }

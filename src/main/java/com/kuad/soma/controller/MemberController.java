@@ -1,6 +1,7 @@
 package com.kuad.soma.controller;
 
 import com.kuad.soma.dto.MemberSearchResponse;
+import com.kuad.soma.dto.TeamSearchResponse;
 import com.kuad.soma.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +19,9 @@ public class MemberController {
     private final MemberService memberService;
 
     @GetMapping("/search")
-    public ResponseEntity<List<MemberSearchResponse>> searchMembers(
+    public ResponseEntity<List<TeamSearchResponse>> searchMembers(
             @RequestParam(required = false, defaultValue = "") String keyword) {
-        List<MemberSearchResponse> results = memberService.searchMembers(keyword);
+        List<TeamSearchResponse> results = memberService.searchMembers(keyword);
         return ResponseEntity.ok(results);
     }
 }

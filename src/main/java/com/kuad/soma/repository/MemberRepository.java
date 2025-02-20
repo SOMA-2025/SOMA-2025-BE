@@ -10,6 +10,9 @@ import java.util.List;
 
 @Repository
 public interface MemberRepository extends JpaRepository<Member, Long> {
-    @Query("SELECT m FROM Member m WHERE m.name LIKE %:keyword%")
+    @Query("SELECT m FROM Member m JOIN FETCH m.team")
+    List<Member> findAllWithTeam();
+
+    @Query("SELECT m FROM Member m JOIN FETCH m.team WHERE m.name LIKE %:keyword%")
     List<Member> searchByNameContaining(@Param("keyword") String keyword);
 }
