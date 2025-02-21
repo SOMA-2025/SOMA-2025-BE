@@ -63,19 +63,18 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Disable immediate exit on error
-            set +e
+            bash -c 'set +e
             cd /home/ubuntu/app
             echo "Current working directory: $(pwd)"
             echo "Listing files in /home/ubuntu/app:"
             ls -l
-            if pgrep -f 'java -jar'; then
+            if pgrep -f "java -jar"; then
               echo "Found running java process, killing it..."
-              pkill -f 'java -jar' || true
+              pkill -f "java -jar"
               sleep 5
             fi
             echo "Running: java -jar /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar --spring.config.location=file:/home/ubuntu/app/application.properties"
             nohup java -jar /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar --spring.config.location=file:/home/ubuntu/app/application.properties > nohup.out 2>&1 &
             sleep 2
             echo "Application started"
-            exit 0
+            exit 0'
