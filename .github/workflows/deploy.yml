@@ -54,7 +54,7 @@ jobs:
             app.cors.allowed-methods=GET,POST,PUT,DELETE
             app.cors.allowed-headers=*
             app.cors.max-age=3600
-            EOL
+            EOL || true
 
       - name: Deploy Application
         uses: appleboy/ssh-action@master
@@ -63,19 +63,17 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 에러 발생 시 종료하지 않도록 설정
-            set +e
-            cd /home/ubuntu/app
-            echo "Current working directory: $(pwd)"
-            echo "Listing files in /home/ubuntu/app:"
-            ls -l
+            cd /home/ubuntu/app || true
+            echo "Current working directory: $(pwd)" || true
+            echo "Listing files in /home/ubuntu/app:" || true
+            ls -l || true
             if pgrep -f "java -jar" > /dev/null; then
-              echo "Found running java process, killing it..."
-              pkill -f "java -jar" || :
-              sleep 5
+              echo "Found running java process, killing it..." || true
+              pkill -f "java -jar" || true
+              sleep 5 || true
             fi
-            echo "Running: java -jar /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar --spring.config.location=file:/home/ubuntu/app/application.properties"
-            nohup java -jar /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar --spring.config.location=file:/home/ubuntu/app/application.properties > nohup.out 2>&1 &
-            sleep 2
-            echo "Application started"
+            echo "Running: java -jar /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar --spring.config.location=file:/home/ubuntu/app/application.properties" || true
+            nohup java -jar /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar --spring.config.location=file:/home/ubuntu/app/application.properties > nohup.out 2>&1 & || true
+            sleep 2 || true
+            echo "Application started" || true
             exit 0
