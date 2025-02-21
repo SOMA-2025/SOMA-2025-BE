@@ -24,7 +24,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew clean build -x test
 
-      - name: Copy files to EC2
+      - name: Copy JAR to EC2
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -33,7 +33,7 @@ jobs:
           source: "build/libs/SOMA-0.0.1-SNAPSHOT.jar"
           target: "/home/ubuntu/app"
 
-      - name: Create and configure application.properties
+      - name: Create application.properties on EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -56,25 +56,45 @@ jobs:
             app.cors.max-age=3600
             EOL
 
-      - name: Deploy Application
+      - name: Update deploy.sh on EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /home/ubuntu/app || true
-            echo "Current working directory: $(pwd)" || true
-            echo "Listing files in /home/ubuntu/app:" || true
-            ls -l || true
+            cat > /home/ubuntu/app/deploy.sh << 'EOF'
+            #!/bin/bash
+            # deploy.sh - always exit 0
+            set +e
+            cd /home/ubuntu/app || exit 0
+            echo "Current working directory: $(pwd)"
+            echo "Listing files in /home/ubuntu/app:"
+            ls -l
             if pgrep -f "java -jar" > /dev/null; then
-              echo "Found running java process(es), killing them..." || true
-              # 서브셸 내에서 trap을 설정하여 kill 명령이 종료해도 0으로 처리하도록 함
-              ( trap "exit 0" TERM; kill -15 $(pgrep -f "java -jar") )
-              sleep 5 || true
+              echo "Found running java process(es), killing them..."
+              kill -15 $(pgrep -f "java -jar") >/dev/null 2>&1
+              sleep 5
             fi
-            echo "Running: java -jar /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar --spring.config.location=file:/home/ubuntu/app/application.properties" || true
-            nohup java -jar /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar --spring.config.location=file:/home/ubuntu/app/application.properties > nohup.out 2>&1 & || true
-            sleep 2 || true
-            echo "Application started" || true
+            echo "Running: java -jar /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar --spring.config.location=file:/home/ubuntu/app/application.properties"
+            nohup java -jar /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar --spring.config.location=file:/home/ubuntu/app/application.properties > nohup.out 2>&1 &
+            sleep 2
+            echo "Application started"
             exit 0
+            EOF
+
+      - name: Set execute permission on deploy.sh
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: chmod +x /home/ubuntu/app/deploy.sh
+
+      - name: Run deploy.sh on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: bash /home/ubuntu/app/deploy.sh || true
