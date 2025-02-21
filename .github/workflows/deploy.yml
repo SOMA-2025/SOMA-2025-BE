@@ -78,4 +78,4 @@ jobs:
             sleep 2
             echo "Application started"
             exit 0
-        fail_on_error: false
+
