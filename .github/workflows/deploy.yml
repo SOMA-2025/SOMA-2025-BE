@@ -32,7 +32,6 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "build/libs/SOMA-0.0.1-SNAPSHOT.jar"
           target: "/home/ubuntu/app"
-          # strip_components 옵션 제거
 
       - name: Create and configure application.properties
         uses: appleboy/ssh-action@master
@@ -64,6 +63,8 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Disable immediate exit on error
+            set +e
             cd /home/ubuntu/app
             echo "Current working directory: $(pwd)"
             echo "Listing files in /home/ubuntu/app:"
@@ -78,4 +79,3 @@ jobs:
             sleep 2
             echo "Application started"
             exit 0
-
