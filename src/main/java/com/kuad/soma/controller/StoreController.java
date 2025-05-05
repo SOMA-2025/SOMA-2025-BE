@@ -30,9 +30,7 @@ public class StoreController {
         return ResponseEntity.ok(items);
     }
 
-    /**
-     * 팀별 상품 조회
-     */
+
     @GetMapping("/items/team/{teamId}")
     public ResponseEntity<List<ItemDTO>> getItemsByTeamId(@PathVariable Long teamId) {
         List<ItemDTO> items = storeService.getItemsByTeamId(teamId);
