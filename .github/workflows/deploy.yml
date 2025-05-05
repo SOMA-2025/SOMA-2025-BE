@@ -26,11 +26,6 @@ jobs:
           echo "===== Looking for Store related files ====="
           find src -name "*.java" | grep -i store
       
-      - name: Clean Gradle cache
-        run: |
-          rm -rf ~/.gradle/caches/
-          ./gradlew clean --no-build-cache
-      
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       
