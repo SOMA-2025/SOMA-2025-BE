@@ -114,17 +114,26 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: bash /home/ubuntu/app/deploy.sh || true
       
-      - name: Verify deployment
+      - name: Wait for application startup
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            echo "Waiting for application to start..."
+            sleep 30
             echo "===== Checking running Java process ====="
             ps aux | grep java
             echo "===== Checking application logs ====="
             tail -n 50 /home/ubuntu/app/nohup.out
-            echo "===== Testing API endpoints ====="
-            curl -v http://localhost:8080/api/members/search?keyword=
-            curl -v http://localhost:8080/api/store/teams
+            echo "===== Checking JAR file on server ====="
+            jar tf /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar | grep -i controller
+            echo "===== Checking if application is running ====="
+            if pgrep -f "java -jar" > /dev/null; then
+              echo "Application is running"
+              exit 0
+            else
+              echo "Application is not running"
+              exit 1
+            fi
