@@ -19,25 +19,46 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
       
-      - name: Debug project structure
+      - name: Debug Git status
         run: |
-          echo "===== Looking for Controller files ====="
-          find src -name "*.java" | grep -i controller
-          echo "===== Looking for Store related files ====="
-          find src -name "*.java" | grep -i store
+          echo "===== Git Status ====="
+          git status
+          echo "===== Latest Commits ====="
+          git log -n 5 --oneline
+      
+      - name: Debug project structure (BEFORE BUILD)
+        run: |
+          echo "===== Project Structure ====="
+          find src -type f -name "*.java" | sort
+          echo "===== Controller Files ====="
+          find src -name "*Controller.java"
+          echo "===== Store Files ====="
+          find src -name "*Store*.java"
+          echo "===== Controller Content ====="
+          cat src/main/java/com/kuad/soma/controller/StoreController.java || echo "File not found"
       
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       
-      - name: Build with Gradle
-        run: ./gradlew clean build -x test
+      - name: Print Gradle version
+        run: ./gradlew --version
+      
+      - name: Clean Gradle
+        run: ./gradlew clean
+      
+      - name: Build with Gradle (verbose)
+        run: ./gradlew build -x test --info
       
       - name: Verify JAR contents
         run: |
+          echo "===== JAR File Size ====="
+          ls -lh build/libs/SOMA-0.0.1-SNAPSHOT.jar
           echo "===== Checking JAR contents ====="
           jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep -i controller
           jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep -i store
           jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep -i dto
+          echo "===== All Class Files ====="
+          jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep "\.class$" | sort
       
       - name: Copy JAR to EC2
         uses: appleboy/scp-action@master
