@@ -24,7 +24,17 @@ public class Item extends BaseEntity {
     private String name;
 
     @Column(nullable = false)
-    private String teamName;
+    private String creator;
+
+    @Column
+    private String descriptionImagePath;
+
+    @Column
+    private String itemImagePath;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id", nullable = false)
+    private Team team;
 
     @OneToMany(mappedBy = "item")
     private List<Order> orders = new ArrayList<>();

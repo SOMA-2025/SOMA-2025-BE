@@ -20,4 +20,7 @@ public class Team extends BaseEntity {
 
     @OneToMany(mappedBy = "team")
     private List<Member> members = new ArrayList<>();
+
+    @OneToMany(mappedBy = "team")
+    private List<Item> items = new ArrayList<>();
 }

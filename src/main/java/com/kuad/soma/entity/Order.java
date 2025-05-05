@@ -1,13 +1,15 @@
 package com.kuad.soma.entity;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 
 @Entity
 @Getter
+@Builder
+@Setter
+@AllArgsConstructor
 @Table(name = "orders")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order extends BaseEntity {
@@ -15,6 +17,7 @@ public class Order extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "receipt_id")
     private Receipt receipt;
@@ -28,4 +31,9 @@ public class Order extends BaseEntity {
 
     @Column(nullable = false)
     private BigDecimal totalPrice;
+
+    // Receipt 설정 메서드 추가
+    public void setReceipt(Receipt receipt) {
+        this.receipt = receipt;
+    }
 }
