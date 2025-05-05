@@ -19,15 +19,17 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
       
-      - name: Setup Gradle cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: Debug project structure
+        run: |
+          echo "===== Looking for Controller files ====="
+          find src -name "*.java" | grep -i controller
+          echo "===== Looking for Store related files ====="
+          find src -name "*.java" | grep -i store
+      
+      - name: Clean Gradle cache
+        run: |
+          rm -rf ~/.gradle/caches/
+          ./gradlew clean --no-build-cache
       
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -35,8 +37,12 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew clean build -x test
       
-      - name: Check JAR contents
-        run: jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep -i controller
+      - name: Verify JAR contents
+        run: |
+          echo "===== Checking JAR contents ====="
+          jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep -i controller
+          jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep -i store
+          jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep -i dto
       
       - name: Copy JAR to EC2
         uses: appleboy/scp-action@master
@@ -112,3 +118,18 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: bash /home/ubuntu/app/deploy.sh || true
+      
+      - name: Verify deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "===== Checking running Java process ====="
+            ps aux | grep java
+            echo "===== Checking application logs ====="
+            tail -n 50 /home/ubuntu/app/nohup.out
+            echo "===== Testing API endpoints ====="
+            curl -v http://localhost:8080/api/members/search?keyword=
+            curl -v http://localhost:8080/api/store/teams
