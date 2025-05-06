@@ -32,7 +32,7 @@ public class Item extends BaseEntity {
     @Column
     private String itemImagePath;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
