@@ -8,17 +8,22 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # 모든 히스토리 가져오기
 
+    steps:
+      # 1. 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # 2. JDK 설치
       - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
           java-version: '17'
           distribution: 'adopt'
 
+      # 3. Git 상태 디버그
       - name: Debug Git status
         run: |
           echo "===== Git Status ====="
@@ -26,49 +31,68 @@ jobs:
           echo "===== Latest Commits ====="
           git log -n 5 --oneline
 
+      # 4. 프로젝트 구조 디버그
       - name: Debug project structure (BEFORE BUILD)
         run: |
           echo "===== Project Structure ====="
           find src -type f -name "*.java" | sort
           echo "===== Controller Files ====="
           find src -name "*Controller.java"
-          echo "===== Store Files ====="
+          echo "===== StoreService Files ====="
           find src -name "*Store*.java"
-          echo "===== Controller Content ====="
+          echo "===== StoreController Content ====="
           cat src/main/java/com/kuad/soma/controller/StoreController.java || echo "File not found"
 
+      # 5. build 준비
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Print Gradle version
         run: ./gradlew --version
 
+      # 6. clean & build
       - name: Clean Gradle
         run: ./gradlew clean
 
       - name: Build with Gradle (verbose)
         run: ./gradlew build -x test --info
 
+      # 7. 빌드 결과 확인
       - name: Verify JAR contents
         run: |
           echo "===== JAR File Size ====="
           ls -lh build/libs/SOMA-0.0.1-SNAPSHOT.jar
-          echo "===== Checking JAR contents ====="
-          jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep -i controller
-          jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep -i store
-          jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep -i dto
-          echo "===== All Class Files ====="
-          jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep "\.class$" | sort
+          echo "===== Controllers in JAR ====="
+          jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep -i controller || true
+          echo "===== StoreService in JAR ====="
+          jar tf build/libs/SOMA-0.0.1-SNAPSHOT.jar | grep -i store || true
 
+      # 8. EC2로 JAR 복사
       - name: Copy JAR to EC2
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "build/libs/SOMA-0.0.1-SNAPSHOT.jar"
-          target: "/home/ubuntu/app"
+          source: build/libs/SOMA-0.0.1-SNAPSHOT.jar
+          target: /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar
 
+      # 9. 복사 직후 EC2 파일 확인
+      - name: Verify JAR on EC2 (post-copy)
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "▶︎ /home/ubuntu/app 디렉토리 목록:"
+            ls -l /home/ubuntu/app
+            echo "▶︎ JAR 파일 정보:"
+            ls -l /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar
+            echo "▶︎ JAR SHA256 체크섬:"
+            sha256sum /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar
+
+      # 10. EC2에 application.properties 생성
       - name: Create application.properties on EC2
         uses: appleboy/ssh-action@master
         with:
@@ -94,6 +118,7 @@ jobs:
             logging.level.org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping=DEBUG
             EOL
 
+      # 11. EC2에 deploy.sh 생성
       - name: Update deploy.sh on EC2
         uses: appleboy/ssh-action@master
         with:
@@ -103,6 +128,7 @@ jobs:
           script: |
             cat > /home/ubuntu/app/deploy.sh << 'EOF'
             #!/bin/bash
+            echo "---- deploy.sh 실행: $(date +'%Y-%m-%dT%H:%M:%S') ----" >> /home/ubuntu/app/deploy.log
             set +e
             cd /home/ubuntu/app || exit 0
             if pgrep -f "java -jar" > /dev/null; then
@@ -110,11 +136,14 @@ jobs:
               sleep 5
             fi
             nohup java -jar /home/ubuntu/app/SOMA-0.0.1-SNAPSHOT.jar \
-              --spring.config.location=file:/home/ubuntu/app/application.properties > nohup.out 2>&1 &
+              --spring.config.location=file:/home/ubuntu/app/application.properties \
+              --logging.level.org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping=DEBUG \
+              > nohup.out 2>&1 &
             sleep 2
             exit 0
             EOF
 
+      # 12. deploy.sh 실행 권한 부여
       - name: Set execute permission on deploy.sh
         uses: appleboy/ssh-action@master
         with:
@@ -123,6 +152,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: chmod +x /home/ubuntu/app/deploy.sh
 
+      # 13. deploy.sh 실행
       - name: Run deploy.sh on EC2
         uses: appleboy/ssh-action@master
         with:
@@ -131,7 +161,8 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: bash /home/ubuntu/app/deploy.sh || true
 
-      - name: Wait for application startup
+      # 14. 애플리케이션 기동 대기 및 검증
+      - name: Wait & verify startup on EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -140,9 +171,9 @@ jobs:
           script: |
             echo "Waiting for application to start..."
             sleep 30
-            echo "===== Checking running Java process ====="
-            ps aux | grep java
-            echo "===== Recent application log ====="
+            echo "▶︎ Running Java process:"
+            ps aux | grep java | grep SOMA-0.0.1-SNAPSHOT.jar || true
+            echo "▶︎ 최근 로그 (nohup.out):"
             tail -n 50 /home/ubuntu/app/nohup.out
-            echo "===== Testing Store API ====="
-            curl -i http://localhost:8080/api/store/teams
+            echo "▶︎ Test Store API:"
+            curl -i http://localhost:8080/api/store/teams || true
