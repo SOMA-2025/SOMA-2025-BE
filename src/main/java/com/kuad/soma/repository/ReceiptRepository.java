@@ -15,13 +15,16 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Long> {
     // 특정 사용자의 모든 주문 내역 조회 (전화번호로 식별)
     List<Receipt> findByPhoneNumberOrderByCreatedAtDesc(String phoneNumber);
 
-    // 특정 기간 내의 주문 내역 조회
-    @Query("SELECT r FROM Receipt r WHERE r.createdAt BETWEEN :startDate AND :endDate ORDER BY r.createdAt DESC")
-    List<Receipt> findByCreatedAtBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+    // ReceiptRepository에 추가
+    List<Receipt> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
     // 최근 주문 내역 조회 (최신순)
     List<Receipt> findTop10ByOrderByCreatedAtDesc();
 
     // 특정 입금자명으로 주문 내역 조회
     List<Receipt> findByAccountHolderContainingOrderByCreatedAtDesc(String accountHolder);
+
+    // 메서드 추가
+    List<Receipt> findAllByOrderByCreatedAtDesc();
+
 }
