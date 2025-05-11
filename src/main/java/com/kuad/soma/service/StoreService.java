@@ -79,6 +79,7 @@ public class StoreService {
                 .collect(Collectors.toList());
     }
 
+
     /**
      * 주문 생성 (체크아웃)
      */
@@ -88,6 +89,7 @@ public class StoreService {
             // 영수증 생성
             Receipt receipt = Receipt.builder()
                     .accountHolder(checkoutRequest.getAccountHolder())
+                    .bankName(checkoutRequest.getBankName())  // 은행명 추가
                     .accountNumber(checkoutRequest.getAccountNumber())
                     .phoneNumber(checkoutRequest.getPhoneNumber())
                     .totalAmount(BigDecimal.ZERO)

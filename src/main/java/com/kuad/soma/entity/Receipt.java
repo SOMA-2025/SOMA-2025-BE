@@ -1,4 +1,5 @@
 package com.kuad.soma.entity;
+
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
@@ -23,6 +24,9 @@ public class Receipt extends BaseEntity {
 
     @Column(nullable = false)
     private String accountHolder;
+
+    @Column(nullable = false)
+    private String bankName;  // 은행명 필드 추가
 
     @Column(nullable = false)
     private String accountNumber;
