@@ -19,6 +19,7 @@ public class ReceiptDTO {
     private Long id;
     private BigDecimal totalAmount;
     private String accountHolder;
+    private String bankName;          // 은행명 필드 추가
     private String accountNumber;
     private String phoneNumber;
     private LocalDateTime createdAt;
@@ -33,6 +34,7 @@ public class ReceiptDTO {
                 .id(receipt.getId())
                 .totalAmount(receipt.getTotalAmount())
                 .accountHolder(receipt.getAccountHolder())
+                .bankName(receipt.getBankName())
                 .accountNumber(receipt.getAccountNumber())
                 .phoneNumber(receipt.getPhoneNumber())
                 .createdAt(receipt.getCreatedAt())
