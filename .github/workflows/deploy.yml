@@ -121,7 +121,7 @@ jobs:
             spring.jpa.properties.hibernate.format_sql=true
             spring.jpa.database-platform=org.hibernate.dialect.MySQL8Dialect
             server.port=8080
-            app.cors.allowed-origins=https://kuad-archive.com
+            app.cors.allowed-origins=https://kuad-archive.com,https://www.kuad-archive.com
             app.cors.allowed-methods=GET,POST,PUT,DELETE
             app.cors.allowed-headers=*
             app.cors.max-age=3600
