@@ -1,6 +1,7 @@
 package com.kuad.soma.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.kuad.soma.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -34,12 +35,21 @@ public class Receipt extends BaseEntity {
     @Column(nullable = false)
     private String phoneNumber;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private OrderStatus status = OrderStatus.PENDING_PAYMENT;
+
     @JsonManagedReference
     @OneToMany(mappedBy = "receipt", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Order> orders = new ArrayList<>();
 
     public void updateTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
+    }
+
+    public void updateStatus(OrderStatus status) {
+        this.status = status;
     }
 
     // Order 추가 메서드

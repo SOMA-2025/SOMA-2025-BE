@@ -1,9 +1,9 @@
-// src/main/java/com/kuad/soma/controller/AdminController.java
 package com.kuad.soma.controller;
 
 import com.kuad.soma.dto.PageResponseDto;
 import com.kuad.soma.dto.ReceiptDTO;
 import com.kuad.soma.entity.Receipt;
+import com.kuad.soma.enums.OrderStatus;
 import com.kuad.soma.service.AdminService;
 import com.kuad.soma.service.ExcelExportService;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +47,7 @@ public class AdminController {
     }
 
     /**
-     * 주문 내역 페이징 조회 (DTO)
+     * 주문 내역 페이징 조회 (DTO) - 삭제되지 않은 것만
      */
     @GetMapping(value = "/receipts", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageResponseDto<ReceiptDTO>> getReceipts(
@@ -84,7 +84,37 @@ public class AdminController {
     }
 
     /**
-     * Excel 내보내기
+     * 주문 상태 토글 (입금 대기 ↔ 입금 완료)
+     */
+    @PutMapping("/receipts/{id}/toggle-status")
+    public ResponseEntity<ReceiptDTO> toggleReceiptStatus(@PathVariable Long id) {
+        try {
+            Receipt updatedReceipt = adminService.toggleReceiptStatus(id);
+            return ResponseEntity.ok(ReceiptDTO.from(updatedReceipt));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * 주문 삭제 (소프트 삭제)
+     */
+    @DeleteMapping("/receipts/{id}")
+    public ResponseEntity<Map<String, Object>> deleteReceipt(@PathVariable Long id) {
+        try {
+            Receipt deletedReceipt = adminService.deleteReceipt(id);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "주문이 삭제되었습니다.",
+                    "receipt", ReceiptDTO.from(deletedReceipt)
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Excel 내보내기 (입금 대기, 입금 완료 상태만)
      */
     @GetMapping("/receipts/export")
     public ResponseEntity<byte[]> exportReceiptsToExcel(
