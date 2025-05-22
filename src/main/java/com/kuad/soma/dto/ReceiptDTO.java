@@ -1,6 +1,7 @@
 package com.kuad.soma.dto;
 
 import com.kuad.soma.entity.Receipt;
+import com.kuad.soma.enums.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,17 +20,16 @@ public class ReceiptDTO {
     private Long id;
     private BigDecimal totalAmount;
     private String accountHolder;
-    private String bankName;          // 은행명 필드 추가
+    private String bankName;
     private String accountNumber;
     private String phoneNumber;
+    private OrderStatus status;
+    private String statusDescription;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private List<OrderDTO> orders;
 
     public static ReceiptDTO from(Receipt receipt) {
-        List<OrderDTO> orderDTOs = receipt.getOrders().stream()
-                .map(OrderDTO::from)
-                .collect(Collectors.toList());
-
         return ReceiptDTO.builder()
                 .id(receipt.getId())
                 .totalAmount(receipt.getTotalAmount())
@@ -37,8 +37,13 @@ public class ReceiptDTO {
                 .bankName(receipt.getBankName())
                 .accountNumber(receipt.getAccountNumber())
                 .phoneNumber(receipt.getPhoneNumber())
+                .status(receipt.getStatus())
+                .statusDescription(receipt.getStatus().getDescription())
                 .createdAt(receipt.getCreatedAt())
-                .orders(orderDTOs)
+                .updatedAt(receipt.getUpdatedAt())
+                .orders(receipt.getOrders().stream()
+                        .map(OrderDTO::from)
+                        .collect(Collectors.toList()))
                 .build();
     }
 }

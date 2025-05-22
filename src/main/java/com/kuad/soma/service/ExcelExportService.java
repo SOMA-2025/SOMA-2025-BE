@@ -2,6 +2,7 @@ package com.kuad.soma.service;
 
 import com.kuad.soma.entity.Order;
 import com.kuad.soma.entity.Receipt;
+import com.kuad.soma.enums.OrderStatus;
 import com.kuad.soma.repository.ReceiptRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
@@ -24,10 +25,12 @@ public class ExcelExportService {
         List<Receipt> receipts;
 
         if (startDate != null && endDate != null) {
-            receipts = receiptRepository.findByCreatedAtBetween(
+            // 날짜 범위가 있는 경우 - 입금 대기, 입금 완료 상태만
+            receipts = receiptRepository.findActiveReceiptsByCreatedAtBetween(
                     startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
         } else {
-            receipts = receiptRepository.findAll();
+            // 전체 조회 - 입금 대기, 입금 완료 상태만
+            receipts = receiptRepository.findActiveReceiptsOrderByCreatedAtDesc();
         }
 
         try (Workbook workbook = new XSSFWorkbook()) {
@@ -43,7 +46,7 @@ public class ExcelExportService {
 
             // 헤더 행 생성
             Row headerRow = sheet.createRow(0);
-            String[] headers = {"주문번호", "주문일시", "입금자명", "은행명", "계좌번호", "연락처",
+            String[] headers = {"주문번호", "주문일시", "상태", "입금자명", "은행명", "계좌번호", "연락처",
                     "상품명", "단가", "수량", "소계", "총금액"};
 
             for (int i = 0; i < headers.length; i++) {
@@ -62,15 +65,16 @@ public class ExcelExportService {
 
                     row.createCell(0).setCellValue(receipt.getId());
                     row.createCell(1).setCellValue(receipt.getCreatedAt().format(formatter));
-                    row.createCell(2).setCellValue(receipt.getAccountHolder());
-                    row.createCell(3).setCellValue(receipt.getBankName());
-                    row.createCell(4).setCellValue(receipt.getAccountNumber());
-                    row.createCell(5).setCellValue(receipt.getPhoneNumber());
-                    row.createCell(6).setCellValue(order.getItem().getName());
-                    row.createCell(7).setCellValue(order.getItem().getPrice().doubleValue());
-                    row.createCell(8).setCellValue(order.getQuantity());
-                    row.createCell(9).setCellValue(order.getTotalPrice().doubleValue());
-                    row.createCell(10).setCellValue(receipt.getTotalAmount().doubleValue());
+                    row.createCell(2).setCellValue(receipt.getStatus().getDescription());
+                    row.createCell(3).setCellValue(receipt.getAccountHolder());
+                    row.createCell(4).setCellValue(receipt.getBankName());
+                    row.createCell(5).setCellValue(receipt.getAccountNumber());
+                    row.createCell(6).setCellValue(receipt.getPhoneNumber());
+                    row.createCell(7).setCellValue(order.getItem().getName());
+                    row.createCell(8).setCellValue(order.getItem().getPrice().doubleValue());
+                    row.createCell(9).setCellValue(order.getQuantity());
+                    row.createCell(10).setCellValue(order.getTotalPrice().doubleValue());
+                    row.createCell(11).setCellValue(receipt.getTotalAmount().doubleValue());
                 }
             }
 
