@@ -121,7 +121,6 @@ jobs:
             spring.jpa.properties.hibernate.format_sql=true
             spring.jpa.database-platform=org.hibernate.dialect.MySQL8Dialect
             server.port=8080
-            spring.jackson.time-zone=Asia/Seoul 
             spring.jpa.properties.hibernate.jdbc.time_zone=Asia/Seoul
             app.cors.allowed-origins=https://kuad-archive.com,https://www.kuad-archive.com
             app.cors.allowed-methods=GET,POST,PUT,DELETE
